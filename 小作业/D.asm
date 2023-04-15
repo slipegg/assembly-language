@@ -1,0 +1,68 @@
+DATA	SEGMENT
+;一些提示语句
+TIP1	DB	0AH,0DH,'Monday',0AH,0DH,'$'
+TIP2	DB	0AH,0DH,'Tuesday',0AH,0DH,'$'
+TIP3	DB	0AH,0DH,'Wednesday',0AH,0DH,'$'
+TIP4	DB	0AH,0DH,'Thursday',0AH,0DH,'$'
+TIP5	DB	0AH,0DH,'Friday',0AH,0DH,'$'
+TIP6	DB	0AH,0DH,'Saturday',0AH,0DH,'$'
+TIP7	DB	0AH,0DH,'Sunday',0AH,0DH,'$'
+TIPE	DB	0AH,0DH,'Error!',0AH,0DH,'$'
+TIPS	DB	0AH,0DH,'Please enter a number:',0AH,0DH,'$'
+
+COD		DW	D1,D2,D3,D4,D5,D6,D7	;地址表
+DATA	ENDS
+
+CODE	SEGMENT
+ASSUME	CS:CODE,DS:DATA
+START:	MOV	AX,DATA			;装填DS
+		MOV DS,AX
+
+INPUT:	MOV	DX,OFFSET TIPS	;输出提示
+		MOV AH,09H
+		INT	21H
+
+		MOV	AH,01H			;输入一个字符
+		INT 21H
+
+		CMP	AL,'0'			;遇到0之后程序就退出
+		JZ	THEEND
+
+		CMP	AL,'1'			;和1和7比较，如果不在这个范围就说明输入错误，跳到错误提示那
+		JB	DE
+		CMP	AL,'7'
+		JA	DE
+
+		SUB	AL,'1'			;将字符按照1~0，2~2，3~4，4~6……7~12的顺序转化，并记录到AL中，这样就与地址表对应了
+		SHL	AL,1
+
+		MOV BL,AL
+		MOV BH,0
+		JMP	COD[BX]			;相对寻址，按照地址表找到跳转的地址，进行跳转
+
+;依次对应星期一、星期二、星期三……星期天，操作基本类似
+D1:		MOV	DX,OFFSET TIP1	;将DX赋上相应的单词字符串的首地址
+		JMP OUTPUT			;直接跳转到输出
+D2:		MOV	DX,OFFSET TIP2
+		JMP OUTPUT
+D3:		MOV	DX,OFFSET TIP3
+		JMP OUTPUT
+D4:		MOV	DX,OFFSET TIP4
+		JMP OUTPUT
+D5:		MOV	DX,OFFSET TIP5
+		JMP OUTPUT
+D6:		MOV	DX,OFFSET TIP6
+		JMP OUTPUT
+D7:		MOV	DX,OFFSET TIP7
+		JMP OUTPUT
+DE:		MOV	DX,OFFSET TIPE
+
+OUTPUT:	MOV	AH, 9		;输出DX中地址对应的字符串
+		INT	21H
+		
+		JMP	INPUT
+
+THEEND:	MOV	AX, 4C00H	;程序结束
+		INT	21H
+CODE	ENDS
+		END	START
